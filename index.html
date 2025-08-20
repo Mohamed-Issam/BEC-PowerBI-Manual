@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BEC Power BI Development & Publishing Manual</title>
+  <style>
+    :root{
+      --brand:#1f6feb;           /* primary brand blue */
+      --brand-600:#1a5bcc;
+      --brand-700:#174aa8;
+      --brand-50:#e9f1ff;
+      --accent:#00b3a4;          /* teal accent */
+      --danger:#d73a49;          /* limited red for warnings */
+      --ink:#0f172a;             /* slate-900 */
+      --muted:#334155;           /* slate-700 */
+      --bg:#0b1020;              /* deep background for header/hero */
+      --surface:#0f172a;         /* card background */
+      --card:#0b132b;            /* darker card */
+      --soft:#111827;            /* soft gray */
+      --white:#ffffff;
+    }
+    html, body{
+      margin:0; padding:0; color:#e5e7eb; background:#0a0f1f;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      line-height:1.6;
+    }
+    /* Utility */
+    .container{ max-width:1100px; margin:0 auto; padding:0 20px; }
+    .hero{
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(31,111,235,.25), transparent 60%),
+                  radial-gradient(800px 400px at 90% -20%, rgba(0,179,164,.18), transparent 60%),
+                  linear-gradient(180deg, #0a0f1f, #0b132b);
+      padding:64px 0 40px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .title{
+      font-size:clamp(28px, 5vw, 48px);
+      font-weight:800; letter-spacing:.3px; color:#fff; margin:0 0 10px;
+    }
+    .subtitle{
+      color:#cbd5e1; font-size:clamp(14px, 2.2vw, 18px); margin-top:8px; max-width:780px;
+    }
+    .badge{
+      display:inline-block; padding:6px 10px; border:1px solid rgba(255,255,255,.15);
+      border-radius:999px; color:#e2e8f0; background:rgba(255,255,255,.03);
+      font-size:12px; letter-spacing:.3px; text-transform:uppercase;
+    }
+    .toc{
+      margin-top:28px; display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+    }
+    .toc a{
+      text-decoration:none; color:#e5e7eb; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08); padding:14px 16px; border-radius:16px; display:flex; gap:12px; align-items:center;
+    }
+    .toc a:hover{ border-color: rgba(255,255,255,.18); transform: translateY(-1px); transition: all .15s ease; }
+    .toc svg{ flex:0 0 22px; opacity:.9 }
+    main{ padding:40px 0 80px; }
+    section{
+      margin:28px 0 42px; background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+      border:1px solid rgba(255,255,255,.06); border-radius:20px; overflow:hidden;
+    }
+    .section-hd{
+      padding:18px 20px; background:linear-gradient(180deg, rgba(31,111,235,.15), rgba(31,111,235,.08));
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex; align-items:center; gap:12px;
+    }
+    .section-hd h2{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .section-body{ padding:20px; }
+    h3{ margin:16px 0 8px; font-size:18px; color:#e8edf7 }
+    p{ margin:8px 0 12px; color:#cbd5e1 }
+    ul{ margin:8px 0 12px 18px }
+    li{ margin:6px 0 }
+    .grid{ display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px;
+    }
+    .tag{ display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; background:rgba(31,111,235,.18); color:#dbeafe; border:1px solid rgba(31,111,235,.35) }
+    .kbd{ font-family: ui-monospace, Menlo, Consolas, monospace; font-size:12px; background:#0b1020; padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.07) }
+    .note{ border-left:4px solid var(--accent); padding:10px 14px; background:rgba(0,179,164,.08); border-radius:10px }
+    .warn{ border-left:4px solid var(--danger); padding:10px 14px; background:rgba(215,58,73,.08); border-radius:10px }
+    .mono{ font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .figure{ background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)); border:1px dashed rgba(255,255,255,.12);
+             padding:14px; border-radius:14px; }
+    .caption{ font-size:12px; color:#93a5bf; margin-top:8px }
+    table{ width:100%; border-collapse:collapse; margin:10px 0; }
+    th, td{ padding:10px; border-bottom:1px solid rgba(255,255,255,.08); font-size:14px; }
+    th{ text-align:left; color:#e5e7eb; background:rgba(255,255,255,.03) }
+    .palette{ display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 }
+    .swatch{ width:56px; height:28px; border-radius:8px; border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; font-size:10px }
+    .footer{ text-align:center; color:#93a5bf; padding:24px 0; border-top:1px solid rgba(255,255,255,.06) }
+    a{ color:#8ec5ff }
+    .backtop{ text-align:right; margin-top:8px; }
+    .pill{ display:inline-block; padding:3px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); font-size:12px; color:#c9d4eb }
+    .hero .container{ position:relative; padding-top:140px; }
+    .logo-link{ position:absolute; top:5px; left:20px; display:inline-block; }
+    .logo-link img{ height:120px; width:auto; opacity:.95; }
+        .logo-link:hover img{ opacity:1; transform:scale(1.02); transition: all .15s ease; }
+   </style>
+</head>
+<body>
+  <header id="top" class="hero">
+    <div class="container">
+      <a href="#top" class="logo-link" title="Go to top">
+        <img src="https://raw.githubusercontent.com/Mohamed-Issam/BEC/refs/heads/main/Assets/Logo/Logo%20White.png" alt="BEC Logo" />
+      </a>
+      <span class="badge">Manual by BEC's Project Controls Department supervised by Eng. Karam Moukhtar</span>
+      <h1 class="title">Power BI Development & Publishing Manual</h1>
+      <p class="subtitle">A  practical, visual checklist for designing, modeling, securing, and publishing high‑quality dashboards adhereing to BEC best practices. Use this as your standard operating procedure for all dashboards.</p>
+      <div class="toc">
+        <a href="#branding">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>1. Branding & Design</span>
+        </a>
+        <a href="#visuals"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 3h18v18H3z" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3v18" stroke="currentColor" stroke-width="2"/></svg><span>2. Visuals & Titles</span></a>
+        <a href="#navigation"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>3. Navigation</span></a>
+        <a href="#templates"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>4. Templates & Themes</span></a>
+        <a href="#modeling"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="12" r="2" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="8" r="2" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="16" r="2" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M8 12l8-4M8 12l8 4" stroke="currentColor" stroke-width="2"/></svg><span>5. Data Modeling</span></a>
+        <a href="#measures"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 18V6l8 6 8-6v12H4z" stroke="currentColor" stroke-width="2"/></svg><span>6. Measures & DAX</span></a>
+        <a href="#sources"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16v10H4z" stroke="currentColor" stroke-width="2"/><path d="M2 17h20M8 7V3m8 4V3" stroke="currentColor" stroke-width="2"/></svg><span>7. Data Sources</span></a>
+        <a href="#publishing"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="3" y="15" width="18" height="6" rx="2" stroke="currentColor" stroke-width="2"/></svg><span>8. Workspaces & Publishing</span></a>
+        <a href="#refresh"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 20a8 8 0 1 0-1.7-15.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>9. Refresh & Maintenance</span></a>
+        <a href="#security"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.6 9.4-8 10-4.4-.6-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>10. Security & RLS</span></a>
+        <a href="#collab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="3" stroke="currentColor" stroke-width="2"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="2"/></svg><span>11. Collaboration</span></a>
+        <a href="#qa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H7l-3 3V5z" stroke="currentColor" stroke-width="2"/></svg><span>12. QA & Review</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 1. Branding -->
+    <section id="branding">
+      <div class="section-hd">
+        <h2>1) Branding & Visual Design Standards</h2>
+        <span class="pill">Consistency • Accessibility • Readability</span>
+      </div>
+      <div class="section-body">
+        <div class="grid">
+          <div class="card">
+            <h3>Theme & Palette</h3>
+            <p>Use an organization-wide theme. Limit red to exceptions/alerts. Default visuals to a blue monochrome scale for rankings.</p>
+            <div class="palette">
+              <div class="swatch" style="background:#e9f1ff;color:#111">50</div>
+              <div class="swatch" style="background:#bfdbfe;color:#111">200</div>
+              <div class="swatch" style="background:#60a5fa">400</div>
+              <div class="swatch" style="background:#1f6feb">500</div>
+              <div class="swatch" style="background:#1a5bcc">600</div>
+              <div class="swatch" style="background:#174aa8">700</div>
+              <div class="swatch" style="background:#0f2f7a">800</div>
+            </div>
+            <p><span class="tag">Tip</span> Export a <span class="kbd">.json</span> theme and reuse across reports.</p>
+          </div>
+          <div class="card">
+            <h3>Typography</h3>
+            <table>
+              <tr><th>Use Case</th><th>Font</th><th>Size</th></tr>
+              <tr><td>H1 Page Title</td><td>Arial / Calibri</td><td>18–24 pt</td></tr>
+              <tr><td>H2 Section</td><td>Arial / Calibri</td><td>16–18 pt</td></tr>
+              <tr><td>Body</td><td>Arial / Calibri</td><td>≥ 12 pt</td></tr>
+              <tr><td>Captions/Notes</td><td>Arial Narrow</td><td>10–12 pt</td></tr>
+            </table>
+            <p class="note">Minimum readable size recommended for body text: 12 pt. Ensure contrast ratios are accessible.</p>
+          </div>
+          <div class="card">
+            <h3>Logo & Headers</h3>
+            <ul>
+              <li>Place company logo at top‑right on every page.</li>
+              <li>Logo links back to the landing page.</li>
+              <li>Use consistent header height and spacing grid.</li>
+            </ul>
+            <div class="figure">
+              <!-- Header mock -->
+              <svg viewBox="0 0 700 140" width="100%" height="120">
+                <rect x="0" y="0" width="700" height="140" rx="16" fill="url(#g1)" opacity="0.4"/>
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#1f6feb"/>
+                    <stop offset="1" stop-color="#00b3a4"/>
+                  </linearGradient>
+                </defs>
+                <rect x="20" y="40" width="240" height="24" rx="6" fill="rgba(255,255,255,.15)"/>
+                <rect x="20" y="80" width="320" height="16" rx="5" fill="rgba(255,255,255,.12)"/>
+                <rect x="600" y="35" width="70" height="70" rx="12" fill="rgba(255,255,255,.22)"/>
+              </svg>
+              <div class="caption">Header composition: title left, logo right, subtle gradient bar.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 2. Visuals -->
+    <section id="visuals">
+      <div class="section-hd">
+        <h2>2) Visual Rules, Borders & Titles</h2>
+        <span class="pill">Clarity • Consistency • Context</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Every visual must have a clear, descriptive title. Keep to one line where possible.</li>
+          <li>For long titles, use a separate text label and hide the chart’s built‑in title.</li>
+          <li>Rounded borders: 8–12 px radius; consistent across all visuals.</li>
+          <li>Standard naming: <span class="mono">[Measure / Dimension] by [Category] — [Period]</span></li>
+          <li>Use minimal gridlines/ticks; avoid unnecessary legends.</li>
+        </ul>
+        <div class="grid">
+          <div class="card">
+            <h3>Good vs. Overloaded</h3>
+            <div class="figure">
+              <svg viewBox="0 0 700 220" width="100%" height="200">
+                <!-- Clean bar -->
+                <rect x="20" y="20" width="300" height="180" rx="14" fill="rgba(255,255,255,.06)" />
+                <rect x="40" y="60" width="40" height="100" rx="6" fill="#1f6feb"/>
+                <rect x="90" y="40" width="40" height="120" rx="6" fill="#1a5bcc"/>
+                <rect x="140" y="80" width="40" height="80" rx="6" fill="#174aa8"/>
+                <rect x="190" y="30" width="40" height="130" rx="6" fill="#0f2f7a"/>
+                <rect x="240" y="95" width="40" height="65" rx="6" fill="#153e9a"/>
+                <rect x="40" y="170" width="240" height="8" rx="4" fill="rgba(255,255,255,.18)"/>
+                <!-- Busy chart -->
+                <rect x="360" y="20" width="320" height="180" rx="14" fill="rgba(255,255,255,.06)" />
+                <g opacity=".95">
+                  <rect x="380" y="40" width="40" height="120" rx="2" fill="#d73a49"/>
+                  <rect x="425" y="60" width="40" height="100" rx="2" fill="#00b3a4"/>
+                  <rect x="470" y="30" width="40" height="130" rx="2" fill="#eab308"/>
+                  <rect x="515" y="50" width="40" height="110" rx="2" fill="#a855f7"/>
+                  <rect x="560" y="75" width="40" height="85" rx="2" fill="#f97316"/>
+                  <rect x="605" y="90" width="40" height="70" rx="2" fill="#10b981"/>
+                </g>
+                <line x1="360" y1="170" x2="680" y2="170" stroke="rgba(255,255,255,.25)" stroke-dasharray="4 4"/>
+              </svg>
+              <div class="caption">Prefer clean, monochrome series (left) to maximize readability.</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Dynamic Titles</h3>
+            <p>Use DAX to reflect filter context (e.g., “YTD Revenue — <span class="kbd">Selected Year</span>”). Keep units explicit.</p>
+            <div class="note">Use synonyms/keywords in titles (e.g., “Cost Variance”) to improve search/Find.</div>
+          </div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 3. Navigation -->
+    <section id="navigation">
+      <div class="section-hd">
+        <h2>3) Slicers, Logo, Landing & Tutorial</h2>
+        <span class="pill">Guided exploration</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Place slicers across the top of each page; group related filters.</li>
+          <li>Logo at top‑right navigates to Landing.</li>
+          <li>Hide all non‑landing pages; navigate via buttons/bookmarks.</li>
+          <li>Landing must include purpose, scope, and a <strong>Tutorial</strong> link.</li>
+        </ul>
+        <div class="figure">
+          <!-- Navigation wireframe -->
+          <svg viewBox="0 0 900 240" width="100%" height="220">
+            <rect x="10" y="10" width="880" height="220" rx="18" fill="rgba(255,255,255,.06)"/>
+            <rect x="30" y="30" width="680" height="30" rx="8" fill="rgba(31,111,235,.25)"/>
+            <rect x="730" y="20" width="120" height="50" rx="12" fill="rgba(255,255,255,.18)"/>
+            <rect x="30" y="80" width="200" height="130" rx="12" fill="rgba(255,255,255,.10)"/>
+            <rect x="250" y="80" width="620" height="130" rx="12" fill="rgba(255,255,255,.10)"/>
+            <text x="40" y="50" fill="#cfe1ff" font-size="14">Top Slicers</text>
+            <text x="750" y="50" fill="#dbeafe" font-size="14">Logo → Home</text>
+            <text x="40" y="105" fill="#cfe1ff" font-size="14">Nav Buttons</text>
+            <text x="260" y="105" fill="#cfe1ff" font-size="14">Visual Area</text>
+          </svg>
+          <div class="caption">Header with slicers, logo link to Home, left‑side navigation buttons.</div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 4. Templates & Themes -->
+    <section id="templates">
+      <div class="section-hd">
+        <h2>4) Background Templates & Landing</h2>
+        <span class="pill">Start from a .pbit</span>
+      </div>
+      <div class="section-body">
+        <p>Use the provided background page templates and company theme. Start every report from the standardized <span class="kbd">.pbit</span> file containing landing/tutorial pages, color/typography theme, and header layout.</p>
+        <ul>
+          <li>Landing: concise description, scope, data currency, contacts.</li>
+          <li>Tutorial: how to use slicers, tooltips, drill, and buttons.</li>
+          <li>Content pages: consistent grid, margins, and header bar.</li>
+        </ul>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 5. Data Modeling -->
+    <section id="modeling">
+      <div class="section-hd">
+        <h2>5) Data Modeling (Star Schema Required)</h2>
+        <span class="pill">Facts • Dimensions • Keys</span>
+      </div>
+      <div class="section-body">
+        <div class="grid">
+          <div class="card">
+            <h3>Star Schema</h3>
+            <p>Models with more than one relationship must be a star. Avoid many‑to‑many; use bridge tables if needed.</p>
+            <div class="figure">
+              <!-- Star schema smart art -->
+              <svg viewBox="0 0 760 300" width="100%" height="240">
+                <defs>
+                  <linearGradient id="node" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#1f6feb"/>
+                    <stop offset="1" stop-color="#174aa8"/>
+                  </linearGradient>
+                </defs>
+                <rect x="330" y="120" width="100" height="60" rx="12" fill="url(#node)"/>
+                <text x="380" y="155" text-anchor="middle" fill="#fff" font-size="14">FACT</text>
+                <!-- Dimensions -->
+                <rect x="80" y="40" width="120" height="46" rx="10" fill="rgba(255,255,255,.1)"/><text x="140" y="68" text-anchor="middle" fill="#dbeafe" font-size="12">Dim Date</text>
+                <rect x="80" y="210" width="120" height="46" rx="10" fill="rgba(255,255,255,.1)"/><text x="140" y="238" text-anchor="middle" fill="#dbeafe" font-size="12">Dim Project</text>
+                <rect x="560" y="40" width="120" height="46" rx="10" fill="rgba(255,255,255,.1)"/><text x="620" y="68" text-anchor="middle" fill="#dbeafe" font-size="12">Dim Cost</text>
+                <rect x="560" y="210" width="120" height="46" rx="10" fill="rgba(255,255,255,.1)"/><text x="620" y="238" text-anchor="middle" fill="#dbeafe" font-size="12">Dim Resource</text>
+                <!-- Links -->
+                <line x1="330" y1="150" x2="200" y2="63" stroke="#7aa3ff" stroke-width="2"/>
+                <line x1="330" y1="150" x2="200" y2="233" stroke="#7aa3ff" stroke-width="2"/>
+                <line x1="430" y1="150" x2="560" y2="63" stroke="#7aa3ff" stroke-width="2"/>
+                <line x1="430" y1="150" x2="560" y2="233" stroke="#7aa3ff" stroke-width="2"/>
+              </svg>
+              <div class="caption">One fact table with multiple one‑to‑many relationships to dimension tables.</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Modeling Checklist</h3>
+            <ul>
+              <li>Dedicated Date table (marked as Date) for time intel.</li>
+              <li>Unique surrogate keys on dimensions; hide technical columns.</li>
+              <li>Keep fact grain consistent (e.g., per transaction).</li>
+              <li>Push transforms to Power Query; keep DAX for measures.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 6. Measures -->
+    <section id="measures">
+      <div class="section-hd">
+        <h2>6) Measures & Calculations (Explicit)</h2>
+        <span class="pill">Reusable logic</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Only explicit measures (no implicit drag‑and‑drop summarization).</li>
+          <li>Name measures clearly; group using Display Folders.</li>
+          <li>Hide raw numeric columns when a measure exists.</li>
+          <li>Prefer Power Query for heavy row logic; DAX for aggregations.</li>
+        </ul>
+        <div class="figure">
+          <pre class="mono" style="white-space:pre-wrap; font-size:13px; color:#cbd5e1; background:rgba(255,255,255,.03); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.06)">
+Total Cost = SUM(FactCosts[CostAmount])
+YTD Cost = TOTALYTD([Total Cost], 'Date'[Date])
+Cost Variance = [Actual Cost] - [Budget Cost]
+          </pre>
+          <div class="caption">Create base measures and reference them in derived measures.</div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 7. Data Sources -->
+    <section id="sources">
+      <div class="section-hd">
+        <h2>7) Data Sources & Foldering</h2>
+        <span class="pill">Single source of truth</span>
+      </div>
+      <div class="section-body">
+        <p>Connect all data from a centralized SharePoint location with a standard foldering system.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Folder Convention</h3>
+            <table>
+              <tr><th>Level</th><th>Example</th></tr>
+              <tr><td>Root</td><td>/PowerBI/</td></tr>
+              <tr><td>Dept</td><td>/PowerBI/Projects/</td></tr>
+              <tr><td>Dataset</td><td>/PowerBI/Projects/CostControl/</td></tr>
+              <tr><td>Layers</td><td>/Source, /Staging, /Output</td></tr>
+            </table>
+            <p class="note">Use SharePoint/OneDrive versioning and require check‑in/out for PBIX.</p>
+          </div>
+          <div class="card">
+            <h3>Connectivity</h3>
+            <ul>
+              <li>Prefer SharePoint and database connectors (avoid local paths).</li>
+              <li>Use an enterprise gateway for on‑prem sources.</li>
+              <li>Parameterize file paths and dates for portability.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 8. Workspaces & Publishing -->
+    <section id="publishing">
+      <div class="section-hd">
+        <h2>8) Workspaces, Apps & Publishing</h2>
+        <span class="pill">Organize by department</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Each department has its own workspace; use Azure AD groups to assign roles.</li>
+          <li>Publish approved content to the workspace app; end users get Viewer access.</li>
+          <li>All dashboards reviewed by Project Controls prior to publishing.</li>
+        </ul>
+        <div class="figure">
+          <!-- Workspace smart art -->
+          <svg viewBox="0 0 900 240" width="100%" height="220">
+            <rect x="20" y="20" width="240" height="200" rx="14" fill="rgba(31,111,235,.18)"/>
+            <text x="140" y="48" text-anchor="middle" fill="#dbeafe" font-size="14">Enterprise Portal</text>
+            <rect x="50" y="70" width="180" height="30" rx="8" fill="rgba(255,255,255,.18)"/>
+            <rect x="50" y="110" width="180" height="30" rx="8" fill="rgba(255,255,255,.18)"/>
+            <rect x="50" y="150" width="180" height="30" rx="8" fill="rgba(255,255,255,.18)"/>
+            <!-- child workspaces -->
+            <rect x="300" y="40" width="180" height="160" rx="12" fill="rgba(255,255,255,.08)"/>
+            <rect x="500" y="40" width="180" height="160" rx="12" fill="rgba(255,255,255,.08)"/>
+            <rect x="700" y="40" width="180" height="160" rx="12" fill="rgba(255,255,255,.08)"/>
+            <text x="390" y="60" text-anchor="middle" fill="#dbeafe" font-size="13">Finance WS</text>
+            <text x="590" y="60" text-anchor="middle" fill="#dbeafe" font-size="13">Projects WS</text>
+            <text x="790" y="60" text-anchor="middle" fill="#dbeafe" font-size="13">HR WS</text>
+          </svg>
+          <div class="caption">One enterprise “portal” report links to departmental apps and reports.</div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 9. Refresh -->
+    <section id="refresh">
+      <div class="section-hd">
+        <h2>9) Scheduled Refresh & Performance</h2>
+        <span class="pill">Reliable & Fast</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Configure scheduled refresh for every dataset; monitor for one week before go‑live.</li>
+          <li>Use Incremental Refresh for large tables.</li>
+          <li>Reduce visuals per page; remove unused columns; pre‑aggregate where possible.</li>
+        </ul>
+        <div class="warn">If refresh fails, check gateway status, credentials, query timeouts, and source availability first.</div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 10. Security & RLS -->
+    <section id="security">
+      <div class="section-hd">
+        <h2>10) Security, RLS & Access</h2>
+        <span class="pill">Least privilege</span>
+      </div>
+      <div class="section-body">
+        <div class="grid">
+          <div class="card">
+            <h3>RLS Model</h3>
+            <ul>
+              <li>Define roles in Desktop (e.g., Dept, Region, Project).</li>
+              <li>Map roles to Azure AD groups in Service.</li>
+              <li>Test with “View as” before publishing.</li>
+              <li>Maintain an access matrix and owner for each dataset.</li>
+            </ul>
+            <div class="figure">
+              <!-- RLS flow -->
+              <svg viewBox="0 0 820 220" width="100%" height="200">
+                <rect x="30" y="30" width="200" height="60" rx="12" fill="rgba(255,255,255,.10)"/>
+                <text x="130" y="65" text-anchor="middle" fill="#dbeafe" font-size="13">AAD Security Groups</text>
+                <rect x="310" y="30" width="200" height="60" rx="12" fill="rgba(31,111,235,.20)"/>
+                <text x="410" y="65" text-anchor="middle" fill="#dbeafe" font-size="13">RLS Roles</text>
+                <rect x="590" y="30" width="200" height="60" rx="12" fill="rgba(255,255,255,.10)"/>
+                <text x="690" y="65" text-anchor="middle" fill="#dbeafe" font-size="13">Dataset</text>
+                <line x1="230" y1="60" x2="310" y2="60" stroke="#7aa3ff" stroke-width="2"/>
+                <line x1="510" y1="60" x2="590" y2="60" stroke="#7aa3ff" stroke-width="2"/>
+                <rect x="310" y="130" width="200" height="60" rx="12" fill="rgba(255,255,255,.10)"/>
+                <text x="410" y="165" text-anchor="middle" fill="#dbeafe" font-size="13">Power BI App / Report</text>
+                <line x1="690" y1="90" x2="410" y2="130" stroke="#7aa3ff" stroke-width="2"/>
+              </svg>
+              <div class="caption">Grant users access via AAD groups mapped to RLS roles.</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Enterprise Portal</h3>
+            <p>Create a single “all‑in‑one” portal report (no sensitive data) with links to departmental apps. Users request RLS-enabled access to underlying reports.</p>
+            <p class="note">Keep the portal public within the org; enforce RLS only on underlying datasets.</p>
+          </div>
+        </div>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 11. Collaboration -->
+    <section id="collab">
+      <div class="section-hd">
+        <h2>11) Collaboration & Versioning</h2>
+        <span class="pill">SharePoint • OneDrive</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Store PBIX on SharePoint/OneDrive with version history and check‑in/out.</li>
+          <li>Use naming: <span class="mono">ReportName_Department_vMajor.Minor.pbix</span></li>
+          <li>Maintain a change log and data source register.</li>
+          <li>Back up before major edits; consider Git LFS only for advanced teams.</li>
+        </ul>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+
+    <!-- 12. QA -->
+    <section id="qa">
+      <div class="section-hd">
+        <h2>12) QA, Peer Review & Go‑Live</h2>
+        <span class="pill">Trustworthy results</span>
+      </div>
+      <div class="section-body">
+        <ol>
+          <li>Peer review by Project Controls (data accuracy & standards).</li>
+          <li>UAT with sample users; capture feedback.</li>
+          <li>Set scheduled refresh and monitor for one week.</li>
+          <li>Publish to departmental workspace app; announce release notes.</li>
+        </ol>
+        <p class="note">Add a “Last Refreshed” indicator on the landing page and a contact for support.</p>
+      </div>
+      <div class="backtop"><a href="#top">Back to top ↑</a></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    © 2025 BEC Arabia • Power BI Manual • Project Controls
+  </footer>
+</body>
+</html>
