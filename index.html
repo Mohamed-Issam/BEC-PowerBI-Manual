@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BEC Power BI Development & Publishing Manual</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    // Fallback CDN if primary fails
+    if (typeof html2pdf === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
+      document.head.appendChild(script);
+    }
+  </script>
   <style>
     :root{
       --brand:#1f6feb;           /* primary brand blue */
@@ -112,6 +121,36 @@
       <span class="badge">Manual by BEC's Project Controls Department supervised by Eng. Karam Moukhtar</span>
       <h1 class="title">Power BI Development & Publishing Manual</h1>
       <p class="subtitle">A  practical, visual checklist for designing, modeling, securing, and publishing high‑quality dashboards adhereing to BEC best practices. Use this as your standard operating procedure for all dashboards.</p>
+      
+      <!-- PDF Export Button -->
+      <div style="text-align: center; margin: 24px 0;">
+        <button id="exportPdfBtn" style="
+          background: linear-gradient(135deg, #1f6feb, #174aa8);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 4px 12px rgba(31, 111, 235, 0.3);
+          transition: all 0.2s ease;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(31, 111, 235, 0.4)'" 
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(31, 111, 235, 0.3)'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+          Export to PDF
+        </button>
+      </div>
+      
       <div class="toc">
         <a href="#branding">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -552,5 +591,99 @@ Cost Variance = [Actual Cost] - [Budget Cost]
   <footer class="footer">
     © 2025 BEC Arabia • Power BI Manual • Project Controls
   </footer>
+
+  <script>
+    // PDF Export functionality
+    document.getElementById('exportPdfBtn').addEventListener('click', function() {
+      // Show loading state
+      const button = this;
+      const originalText = button.innerHTML;
+      button.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+          <path d="M21 12a9 9 0 11-6.219-8.56"/>
+        </svg>
+        Generating PDF...
+      `;
+      button.disabled = true;
+      
+      // Add spinning animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Configure PDF options optimized for GitHub Pages
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: 'BEC-PowerBI-Manual.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#0a0f1f',
+          logging: false,
+          removeContainer: true,
+          foreignObjectRendering: false
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait',
+          compress: true
+        }
+      };
+      
+      // Create a clone of the body content for PDF generation
+      const content = document.body.cloneNode(true);
+      
+      // Remove the export button from the PDF
+      const exportBtn = content.querySelector('#exportPdfBtn');
+      if (exportBtn) {
+        exportBtn.parentElement.remove();
+      }
+      
+      // Pre-process images for better GitHub Pages compatibility
+      const images = content.querySelectorAll('img');
+      const imagePromises = Array.from(images).map(img => {
+        return new Promise((resolve) => {
+          if (img.complete && img.naturalHeight !== 0) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // Continue even if image fails
+          }
+        });
+      });
+      
+              // Wait for images to load, then generate PDF
+        Promise.all(imagePromises).then(() => {
+          html2pdf().set(opt).from(content).save().then(() => {
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+            
+            // Remove the temporary style
+            document.head.removeChild(style);
+          }).catch(err => {
+            console.error('PDF generation failed:', err);
+            button.innerHTML = originalText;
+            button.disabled = false;
+            document.head.removeChild(style);
+            alert('PDF generation failed. Please try again.');
+          });
+        }).catch(err => {
+          console.error('Image processing failed:', err);
+          button.innerHTML = originalText;
+          button.disabled = false;
+          document.head.removeChild(style);
+          alert('PDF generation failed. Please try again.');
+        });
+    });
+  </script>
 </body>
 </html>
