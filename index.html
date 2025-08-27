@@ -12,6 +12,16 @@
       script.src = 'https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
       document.head.appendChild(script);
     }
+    // Ensure jsPDF and html2canvas are available (html2pdf bundle usually provides both)
+    (function ensureDeps(){
+      function addScript(src){ const s=document.createElement('script'); s.src=src; document.head.appendChild(s); }
+      if (!(window.jspdf && window.jspdf.jsPDF)) {
+        addScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+      if (typeof window.html2canvas === 'undefined') {
+        addScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      }
+    })();
   </script>
   <style>
     :root{
@@ -612,100 +622,117 @@ Cost Variance = [Actual Cost] - [Budget Cost]
   </footer>
 
   <script>
-    // PDF Export functionality
-    document.getElementById('exportPdfBtn').addEventListener('click', function() {
-      // Show loading state
+    // Image-based export: capture full page as high-res PNG, then build A4 PDF
+    document.getElementById('exportPdfBtn').addEventListener('click', async function() {
       const button = this;
       const originalText = button.innerHTML;
       button.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
           <path d="M21 12a9 9 0 11-6.219-8.56"/>
         </svg>
-        Generating PDF...
+        Preparing image & PDF...
       `;
       button.disabled = true;
-      
-      // Add spinning animation
+
       const style = document.createElement('style');
       style.textContent = `
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `;
       document.head.appendChild(style);
-      
-      // Configure PDF options optimized for GitHub Pages
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: 'BEC-PowerBI-Manual.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
+
+      try {
+        // Ensure dependencies are ready
+        const waitFor = (checkFn, timeoutMs = 5000) => new Promise((resolve, reject) => {
+          const start = Date.now();
+          (function poll(){
+            if (checkFn()) return resolve();
+            if (Date.now() - start > timeoutMs) return reject(new Error('Dependency load timeout'));
+            setTimeout(poll, 50);
+          })();
+        });
+
+        await waitFor(() => window.html2canvas && window.jspdf && window.jspdf.jsPDF);
+
+        // Clone content and remove the export button area to avoid capturing it
+        const clone = document.documentElement.cloneNode(true);
+        const cloneBtn = clone.querySelector('#exportPdfBtn');
+        if (cloneBtn && cloneBtn.parentElement) cloneBtn.parentElement.remove();
+
+        // Create an offscreen container to render clone
+        const sandbox = document.createElement('div');
+        sandbox.style.position = 'fixed';
+        sandbox.style.left = '-100000px';
+        sandbox.style.top = '0';
+        sandbox.style.width = document.documentElement.scrollWidth + 'px';
+        sandbox.style.background = getComputedStyle(document.body).backgroundColor || '#0a0f1f';
+        sandbox.appendChild(clone);
+        document.body.appendChild(sandbox);
+
+        // Wait for images in clone to load
+        const imgs = sandbox.querySelectorAll('img');
+        await Promise.all(Array.from(imgs).map(img => new Promise(resolve => {
+          if (img.complete && img.naturalHeight !== 0) return resolve();
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        })));
+
+        // Capture full page as high-resolution canvas
+        const canvas = await window.html2canvas(sandbox, {
           backgroundColor: '#0a0f1f',
-          logging: false,
-          removeContainer: true,
-          foreignObjectRendering: false
-        },
-        pagebreak: {
-          mode: ['avoid-all', 'css'],
-          avoid: 'section, .section-hd, .section-body, .card, .figure, table, pre, ul, ol'
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'portrait',
-          compress: true
+          scale: 3,
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: document.documentElement.scrollWidth,
+          windowHeight: document.documentElement.scrollHeight,
+          logging: false
+        });
+
+        // Remove sandbox
+        document.body.removeChild(sandbox);
+
+        // Download PNG image (whole page)
+        const pngData = canvas.toDataURL('image/png', 1.0);
+        const pngLink = document.createElement('a');
+        pngLink.href = pngData;
+        pngLink.download = 'BEC-PowerBI-Manual.png';
+        document.body.appendChild(pngLink);
+        pngLink.click();
+        document.body.removeChild(pngLink);
+
+        // Build A4 PDF by slicing the image across pages
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0; // y position in mm
+
+        pdf.addImage(pngData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
+        position -= pageHeight;
+
+        while (heightLeft > 0) {
+          pdf.addPage();
+          pdf.addImage(pngData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+          heightLeft -= pageHeight;
+          position -= pageHeight;
         }
-      };
-      
-      // Create a clone of the body content for PDF generation
-      const content = document.body.cloneNode(true);
-      
-      // Remove the export button from the PDF
-      const exportBtn = content.querySelector('#exportPdfBtn');
-      if (exportBtn) {
-        exportBtn.parentElement.remove();
+
+        pdf.save('BEC-PowerBI-Manual.pdf');
+
+      } catch (err) {
+        console.error('Export failed:', err);
+        alert('Export failed. Please try again.');
+      } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        if (style && style.parentNode) document.head.removeChild(style);
       }
-      
-      // Pre-process images for better GitHub Pages compatibility
-      const images = content.querySelectorAll('img');
-      const imagePromises = Array.from(images).map(img => {
-        return new Promise((resolve) => {
-          if (img.complete && img.naturalHeight !== 0) {
-            resolve();
-          } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve(); // Continue even if image fails
-          }
-        });
-      });
-      
-              // Wait for images to load, then generate PDF
-        Promise.all(imagePromises).then(() => {
-          html2pdf().set(opt).from(content).save().then(() => {
-            // Restore button state
-            button.innerHTML = originalText;
-            button.disabled = false;
-            
-            // Remove the temporary style
-            document.head.removeChild(style);
-          }).catch(err => {
-            console.error('PDF generation failed:', err);
-            button.innerHTML = originalText;
-            button.disabled = false;
-            document.head.removeChild(style);
-            alert('PDF generation failed. Please try again.');
-          });
-        }).catch(err => {
-          console.error('Image processing failed:', err);
-          button.innerHTML = originalText;
-          button.disabled = false;
-          document.head.removeChild(style);
-          alert('PDF generation failed. Please try again.');
-        });
     });
   </script>
 </body>
